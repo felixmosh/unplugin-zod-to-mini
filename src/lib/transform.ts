@@ -2,10 +2,10 @@ import type * as swc from '@swc/core';
 import { parseSync, printSync } from '@swc/core';
 import { Visitor } from '@swc/core/Visitor';
 import { PluginOptions } from '../types';
+import { isSupportedChainCheckMethod, SUPPORTED_CHAIN_CHECK_METHODS } from './checks';
 import { type ChainMethod, getCheckMethodName, getZodChain } from './chain';
 import {
   BASE_METHODS,
-  CHECK_METHODS,
   FUNCTIONAL_CHECK_METHODS,
   OBJECT_MODE_METHODS,
   PASSTHROUGH_METHODS,
@@ -233,7 +233,7 @@ function createZodChainMethodHandlers(): Record<string, ChainMethodHandler> {
     };
   }
 
-  for (const methodName of CHECK_METHODS) {
+  for (const methodName of SUPPORTED_CHAIN_CHECK_METHODS) {
     if (handlers[methodName]) {
       continue;
     }
@@ -331,7 +331,7 @@ function createStandaloneMethodHandlers(): Record<string, StandaloneMethodHandle
     };
   }
 
-  for (const methodName of CHECK_METHODS) {
+  for (const methodName of SUPPORTED_CHAIN_CHECK_METHODS) {
     handlers[methodName] = (state, method) => {
       state.result = call(member(state.result, "check"), [
         call(zodMember(state.context, getMiniMethodName(method.name)), method.args),
@@ -513,7 +513,7 @@ function transformStandaloneWrapper(
   if (
     !methods.some(
       (method) =>
-        STANDALONE_WRAPPER_METHODS.includes(method.name) ||
+        STANDALONE_WRAPPER_METHODS.includes(method.name as any) ||
         OBJECT_MODE_METHODS.includes(method.name),
     )
   ) {
@@ -565,8 +565,8 @@ function hasUnsupportedStandaloneZodWrapper(
 
 function isSupportedStandaloneMethod(methodName: string): boolean {
   return (
-    CHECK_METHODS.includes(methodName) ||
-    STANDALONE_WRAPPER_METHODS.includes(methodName) ||
+    isSupportedChainCheckMethod(methodName) ||
+    STANDALONE_WRAPPER_METHODS.includes(methodName as any) ||
     OBJECT_MODE_METHODS.includes(methodName) ||
     PASSTHROUGH_METHODS.includes(methodName)
   );

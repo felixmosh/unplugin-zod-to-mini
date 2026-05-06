@@ -1,3 +1,6 @@
+import { SUPPORTED_CHAIN_CHECK_METHODS } from './checks';
+import { GENERATED_ZOD_OBJECT_METHODS, GENERATED_ZOD_TYPE_METHODS } from './generated-zod-metadata';
+
 export const ZOD_MINI_METHODS: Record<string, string> = {
   min: 'minLength',
   max: 'maxLength',
@@ -6,56 +9,6 @@ export const ZOD_MINI_METHODS: Record<string, string> = {
   and: 'intersection',
   default: '_default',
 };
-
-export const CHECK_METHODS = [
-  'min',
-  'max',
-  'lt',
-  'lte',
-  'maximum',
-  'gt',
-  'gte',
-  'minimum',
-  'length',
-  'trim',
-  'email',
-  'url',
-  'ipv4',
-  'ipv6',
-  'uuid',
-  'int',
-  'toLowerCase',
-  'toUpperCase',
-  'startsWith',
-  'endsWith',
-  'includes',
-  'regex',
-  'date',
-  'iso',
-  'positive',
-  'negative',
-  'nonpositive',
-  'nonnegative',
-  'multipleOf',
-  'step',
-  'maxSize',
-  'minSize',
-  'size',
-  'maxLength',
-  'minLength',
-  'lowercase',
-  'uppercase',
-  'property',
-  'mime',
-  'refine',
-  'superRefine',
-  'nonempty',
-  'overwrite',
-  'normalize',
-  'meta',
-  'describe',
-  'discriminatedUnion',
-];
 
 export const BASE_METHODS = [
   'string',
@@ -169,6 +122,7 @@ export const PASSTHROUGH_BASE_METHODS = [
   'safeParseAsync',
   'stringFormat',
   'success',
+  'iso',
   'time',
   'datetime',
   'duration',
@@ -184,49 +138,37 @@ export const PASSTHROUGH_BASE_METHODS = [
   'xid',
 ];
 
-export const WRAPPER_METHODS = [
-  'optional',
-  'nullable',
-  'nullish',
-  'transform',
-  'default',
-  'prefault',
-  'catch',
-  'catchall',
-  'required',
-  'array',
-  'pipe',
-  'readonly',
-  'brand',
-  'or',
-  'and',
-  'extend',
-  'omit',
-  'pick',
-  'partial',
-];
+const NON_WRAPPER_SCHEMA_METHODS = new Set([
+  'apply',
+  'check',
+  'clone',
+  'exactOptional',
+  'isNullable',
+  'isOptional',
+  'keyof',
+  'merge',
+  'nonoptional',
+  'passthrough',
+  'register',
+  'safeExtend',
+  'strip',
+  'with',
+]);
 
-export const STANDALONE_WRAPPER_METHODS = [
-  'optional',
-  'nullable',
-  'nullish',
-  'partial',
-  'transform',
-  'default',
-  'prefault',
-  'catch',
-  'catchall',
-  'required',
-  'array',
-  'pipe',
-  'readonly',
-  'brand',
-  'or',
-  'and',
-  'extend',
-  'omit',
-  'pick',
-];
+const DERIVED_SCHEMA_METHODS = [...new Set([...GENERATED_ZOD_TYPE_METHODS, ...GENERATED_ZOD_OBJECT_METHODS])];
+const DERIVED_OBJECT_MODE_METHODS = ['loose', 'strict'].filter((methodName) =>
+  GENERATED_ZOD_OBJECT_METHODS.includes(methodName as any),
+);
+const DERIVED_WRAPPER_METHODS = DERIVED_SCHEMA_METHODS.filter((methodName) => {
+  return (
+    !SUPPORTED_CHAIN_CHECK_METHODS.has(methodName) &&
+    !NON_WRAPPER_SCHEMA_METHODS.has(methodName) &&
+    !DERIVED_OBJECT_MODE_METHODS.includes(methodName)
+  );
+});
+
+export const WRAPPER_METHODS = DERIVED_WRAPPER_METHODS;
+export const STANDALONE_WRAPPER_METHODS = DERIVED_WRAPPER_METHODS;
 
 export const FUNCTIONAL_CHECK_METHODS = ['email', 'url', 'ipv4', 'ipv6'];
 export const PASSTHROUGH_METHODS = [
@@ -250,7 +192,7 @@ export const PASSTHROUGH_METHODS = [
   'check',
   'apply',
 ];
-export const OBJECT_MODE_METHODS = ['loose', 'strict', 'strip'];
+export const OBJECT_MODE_METHODS = DERIVED_OBJECT_MODE_METHODS;
 
 export const ZOD_SCHEMA_CONTEXT_METHODS = [
   'object',

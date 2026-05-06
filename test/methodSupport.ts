@@ -1,11 +1,11 @@
 import {
   BASE_METHODS,
-  CHECK_METHODS,
   FUNCTIONAL_CHECK_METHODS,
   OBJECT_MODE_METHODS,
   WRAPPER_METHODS,
   ZOD_MINI_METHODS,
 } from '../src/lib/constants';
+import { SUPPORTED_CHAIN_CHECK_METHODS } from '../src/lib/checks';
 
 export interface GoldenMethodCase {
   title: string;
@@ -21,7 +21,7 @@ function getSupportedMiniMethods(): Set<string> {
   const supported = new Set<string>();
   const allMethods = new Set<string>([
     ...BASE_METHODS,
-    ...CHECK_METHODS,
+    ...SUPPORTED_CHAIN_CHECK_METHODS,
     ...FUNCTIONAL_CHECK_METHODS,
     ...WRAPPER_METHODS,
   ]);
@@ -60,7 +60,7 @@ function getSupportedMiniMethods(): Set<string> {
 }
 
 export const TRANSFORMER_SUPPORTED_MINI_METHODS = getSupportedMiniMethods();
-export const TRANSFORMER_VIRTUAL_MINI_METHODS = new Set<string>(['stripObject']);
+export const TRANSFORMER_VIRTUAL_MINI_METHODS = new Set<string>();
 export const SUPPORTED_PASSTHROUGH_MINI_METHODS = new Set<string>([
   '_function',
   'base64',
@@ -107,11 +107,6 @@ export const SUPPORTED_PASSTHROUGH_MINI_METHODS = new Set<string>([
   'uuidv7',
   'xid',
   'xor',
-]);
-
-// Lowercase callable helpers from zod/mini that are intentionally out of scope
-// for this source-to-source transform.
-export const EXCLUDED_MINI_RUNTIME_FUNCTIONS = new Set<string>([
   'clone',
   'codec',
   'config',
@@ -136,6 +131,35 @@ export const EXCLUDED_MINI_RUNTIME_FUNCTIONS = new Set<string>([
   'toJSONSchema',
   'treeifyError',
 ]);
+
+// Kept to validate formerly-excluded methods are now supported passthroughs.
+export const FORMERLY_EXCLUDED_MINI_RUNTIME_FUNCTIONS = new Set<string>([
+  'clone',
+  'codec',
+  'config',
+  'decode',
+  'decodeAsync',
+  'encode',
+  'encodeAsync',
+  'flattenError',
+  'formatError',
+  'invertCodec',
+  'parse',
+  'parseAsync',
+  'prettifyError',
+  'registry',
+  'safeDecode',
+  'safeDecodeAsync',
+  'safeEncode',
+  'safeEncodeAsync',
+  'safeExtend',
+  'safeParse',
+  'safeParseAsync',
+  'toJSONSchema',
+  'treeifyError',
+]);
+
+export const EXCLUDED_MINI_RUNTIME_FUNCTIONS = new Set<string>();
 
 export const GOLDEN_METHOD_CASES: GoldenMethodCase[] = [
   {
@@ -177,11 +201,6 @@ export const GOLDEN_METHOD_CASES: GoldenMethodCase[] = [
     title: 'maps strict object mode',
     input: 'z.object({ id: z.number() }).strict()',
     expected: 'z.strictObject({ id: z.number() })',
-  },
-  {
-    title: 'maps strip object mode on schema vars',
-    input: 'AdminSchema.strip()',
-    expected: 'z.stripObject(AdminSchema.shape)',
   },
   {
     title: 'maps extend wrappers to top-level extend',

@@ -47,13 +47,16 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "generate:zod-metadata": "node scripts/generate-zod-metadata.mjs",
     "build": "tsdown",
     "dev": "tsdown -w",
     "lint": "oxlint .",
     "play": "npm -C playground run dev",
+    "prebuild": "npm run generate:zod-metadata",
     "prepublishOnly": "npm run build",
     "release": "bumpp && pnpm publish",
     "start": "tsx src/index.ts",
+    "pretest": "npm run generate:zod-metadata",
     "test": "vitest"
   },
   "dependencies": {

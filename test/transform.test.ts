@@ -273,14 +273,12 @@ export const AdminSchema = UserSchema.extend({
   role: z.literal("admin"),
 }).loose();
 
-export const LockedUserSchema = UserSchema.strict();
-export const LockedAdminSchema = AdminSchema.strip();`;
+export const LockedUserSchema = UserSchema.strict();`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
       `export const AdminSchema = z.looseObject(z.extend(UserSchema, { role: z.literal("admin") }).shape);`
     );
     expectCode(output).toContain(`export const LockedUserSchema = z.strictObject(UserSchema.shape);`);
-    expectCode(output).toContain(`export const LockedAdminSchema = z.stripObject(AdminSchema.shape);`);
   });
 
   it('transforms and chains on schema variables', () => {
@@ -576,9 +574,21 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     expectCode(output).toContain(`z.prefault(z.pipe(z.string(), z.transform(val => val.length)), "tuna")`);
   });
 
+  it('keeps clone passthrough on string schemas', () => {
+    const input = `z.string().clone()`;
+    const output = transformZodSnippet(input);
+    expectCode(output).toContain(`z.string().clone()`);
+  });
+
   it('throws on unsupported zod chain methods', () => {
     expect(() => transformZodSnippet(`z.string().madeUpZodMethod()`)).toThrow(
       `Unsupported Zod method "madeUpZodMethod" in zod-mini-transform`
+    );
+  });
+
+  it('throws on strip object mode since mini uses strip by default', () => {
+    expect(() => transformZodSnippet(`z.object({ id: z.number() }).strip()`)).toThrow(
+      `Unsupported Zod method "strip" in zod-mini-transform`
     );
   });
 

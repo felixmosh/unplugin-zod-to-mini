@@ -11,7 +11,7 @@ export const UserSchema = z.object({
 
 export const AdminSchema = UserSchema.extend({
   role: z.literal("admin"),
-}).strip();
+}).loose();
 
 export const PostSchema = z.object({
   title: z.string().min(1).max(200),
