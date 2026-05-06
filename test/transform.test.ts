@@ -564,6 +564,12 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     expectCode(output).toContain(`z.email().check(z.trim(), z.toLowerCase())`);
   });
 
+  it('supports passthrough mini schema bases with transformed chained checks', () => {
+    const input = `z.jwt().uppercase()`;
+    const output = transformZodSnippet(input);
+    expectCode(output).toContain(`z.jwt().check(z.uppercase())`);
+  });
+
   it('transforms prefault after transforms', () => {
     const input = `z.string().transform(val => val.length).prefault("tuna")`;
     const output = transformZodSnippet(input);

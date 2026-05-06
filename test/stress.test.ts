@@ -1,6 +1,7 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { transformZodToMini } from '../src/lib/transform';
 import { expectCode } from './codeExpect';
+import { EXCLUDED_MINI_RUNTIME_FUNCTIONS } from './methodSupport';
 
 const transformZodSnippet = (code: string) => transformZodToMini(`import { z } from 'zod';\n${code}`);
 
@@ -1446,6 +1447,23 @@ describe('stress test: zod schema variations', () => {
       const input = `z.string().describe("A name")`;
       const output = transformZodSnippet(input);
       expectCode(output).toEqual(`import { z } from "zod/mini"; z.string().check(z.describe("A name"));`);
+    });
+  });
+
+  describe('excluded mini runtime methods', () => {
+    const excludedMethods = [...EXCLUDED_MINI_RUNTIME_FUNCTIONS].sort();
+
+    it('has a stress case for every excluded runtime method', () => {
+      expect(excludedMethods.length).toBeGreaterThan(0);
+    });
+
+    it.each(excludedMethods)('keeps excluded method "%s" as a valid transformed call', (methodName) => {
+      const input = `z.${methodName}()`;
+      const output = transformZodSnippet(input);
+
+      expect(output).toBeDefined();
+      expectCode(output).toContain(`import { z } from "zod/mini";`);
+      expectCode(output).toContain(`z.${methodName}()`);
     });
   });
 });

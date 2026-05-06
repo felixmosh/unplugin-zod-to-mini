@@ -9,6 +9,7 @@ import {
   FUNCTIONAL_CHECK_METHODS,
   OBJECT_MODE_METHODS,
   PASSTHROUGH_METHODS,
+  PASSTHROUGH_BASE_METHODS,
   STANDALONE_WRAPPER_METHODS,
   WRAPPER_METHODS,
   ZOD_MINI_METHODS,
@@ -196,6 +197,193 @@ function buildBaseExpression(
   return current;
 }
 
+interface ChainTransformState {
+  result: swc.Expression;
+  checkArgs: swc.Expression[];
+  baseMethodName: string;
+  context: TransformContext;
+}
+
+type ChainMethodHandler = (state: ChainTransformState, method: ChainMethod) => void;
+type StandaloneMethodHandler = (state: StandaloneTransformState, method: ChainMethod) => void;
+
+function flushPendingChecks(state: ChainTransformState): void {
+  if (state.checkArgs.length === 0) {
+    return;
+  }
+
+  state.result = call(member(state.result, "check"), state.checkArgs);
+  state.checkArgs.length = 0;
+}
+
+function getMiniMethodName(methodName: string): string {
+  return ZOD_MINI_METHODS[methodName] || methodName;
+}
+
+function createZodChainMethodHandlers(): Record<string, ChainMethodHandler> {
+  const handlers: Record<string, ChainMethodHandler> = {};
+
+  for (const methodName of FUNCTIONAL_CHECK_METHODS) {
+    handlers[methodName] = (state, method) => {
+      flushPendingChecks(state);
+      state.result = call(zodMember(state.context, getMiniMethodName(method.name)), [
+        state.result,
+        ...method.args,
+      ]);
+    };
+  }
+
+  for (const methodName of CHECK_METHODS) {
+    if (handlers[methodName]) {
+      continue;
+    }
+
+    handlers[methodName] = (state, method) => {
+      const miniName =
+        method.name === "nonempty"
+          ? "minLength"
+          : getCheckMethodName(method.name, state.baseMethodName);
+      const args =
+        method.name === "nonempty" && method.args.length === 0 ? [numericLiteral(1)] : method.args;
+      state.checkArgs.push(call(zodMember(state.context, miniName), args));
+    };
+  }
+
+  for (const methodName of OBJECT_MODE_METHODS) {
+    handlers[methodName] = (state, method) => {
+      flushPendingChecks(state);
+      state.result = applyObjectMode(state.result, method.name, state.context);
+    };
+  }
+
+  for (const methodName of WRAPPER_METHODS) {
+    handlers[methodName] = (state, method) => {
+      flushPendingChecks(state);
+      const miniName = getMiniMethodName(method.name);
+
+      if (method.name === "or") {
+        state.result = call(zodMember(state.context, miniName), [
+          arrayExpression([state.result, ...method.args]),
+        ]);
+        return;
+      }
+
+      if (method.name === "transform") {
+        state.result = call(zodMember(state.context, "pipe"), [
+          state.result,
+          call(zodMember(state.context, miniName), method.args),
+        ]);
+        return;
+      }
+
+      if (method.name === "pipe") {
+        state.result = call(zodMember(state.context, miniName), [state.result, ...method.args]);
+        return;
+      }
+
+      if (method.name === "brand") {
+        return;
+      }
+
+      if (["extend", "omit", "pick"].includes(method.name)) {
+        state.result = call(zodMember(state.context, miniName), [
+          state.result,
+          ...method.args.map((arg) => normalizeExtendArg(arg, state.context)),
+        ]);
+        return;
+      }
+
+      state.result = call(zodMember(state.context, miniName), [state.result, ...method.args]);
+    };
+  }
+
+  handlers.check = (state, method) => {
+    state.checkArgs.push(...method.args);
+  };
+
+  for (const methodName of PASSTHROUGH_METHODS) {
+    if (methodName === "check") {
+      continue;
+    }
+
+    handlers[methodName] = (state, method) => {
+      flushPendingChecks(state);
+      state.result = call(member(state.result, method.name), method.args);
+    };
+  }
+
+  return handlers;
+}
+
+const ZOD_CHAIN_METHOD_HANDLERS = createZodChainMethodHandlers();
+
+interface StandaloneTransformState {
+  result: swc.Expression;
+  context: TransformContext;
+}
+
+function createStandaloneMethodHandlers(): Record<string, StandaloneMethodHandler> {
+  const handlers: Record<string, StandaloneMethodHandler> = {};
+
+  for (const methodName of OBJECT_MODE_METHODS) {
+    handlers[methodName] = (state, method) => {
+      state.result = applyStandaloneObjectMode(state.result, method.name, state.context);
+    };
+  }
+
+  for (const methodName of CHECK_METHODS) {
+    handlers[methodName] = (state, method) => {
+      state.result = call(member(state.result, "check"), [
+        call(zodMember(state.context, getMiniMethodName(method.name)), method.args),
+      ]);
+    };
+  }
+
+  handlers.or = (state, method) => {
+    state.result = call(zodMember(state.context, "union"), [
+      arrayExpression([state.result, ...method.args]),
+    ]);
+  };
+
+  for (const methodName of STANDALONE_WRAPPER_METHODS) {
+    if (handlers[methodName]) {
+      continue;
+    }
+
+    handlers[methodName] = (state, method) => {
+      const miniName = getMiniMethodName(method.name);
+
+      if (method.name === "transform") {
+        state.result = call(zodMember(state.context, "pipe"), [
+          state.result,
+          call(zodMember(state.context, miniName), method.args),
+        ]);
+        return;
+      }
+
+      if (method.name === "brand") {
+        return;
+      }
+
+      const args =
+        method.name === "extend"
+          ? method.args.map((arg) => normalizeExtendArg(arg, state.context))
+          : method.args;
+      state.result = call(zodMember(state.context, miniName), [state.result, ...args]);
+    };
+  }
+
+  for (const methodName of PASSTHROUGH_METHODS) {
+    handlers[methodName] = (state, method) => {
+      state.result = call(member(state.result, method.name), method.args);
+    };
+  }
+
+  return handlers;
+}
+
+const STANDALONE_METHOD_HANDLERS = createStandaloneMethodHandlers();
+
 function transformZodChain(
   base: swc.Expression,
   methods: ChainMethod[],
@@ -213,71 +401,25 @@ function transformZodChain(
     return base;
   }
 
-  let result = buildBaseExpression(base, methods, baseMethodIndex);
-  const baseMethodName = methods[baseMethodIndex].name;
-  const checkArgs: swc.Expression[] = [];
-  const flushChecks = () => {
-    if (checkArgs.length === 0) {
-      return;
-    }
-
-    result = call(member(result, "check"), checkArgs);
-    checkArgs.length = 0;
+  const state: ChainTransformState = {
+    result: buildBaseExpression(base, methods, baseMethodIndex),
+    baseMethodName: methods[baseMethodIndex].name,
+    checkArgs: [],
+    context,
   };
 
   for (let i = baseMethodIndex + 1; i < methods.length; i++) {
     const method = methods[i];
-
-    if (FUNCTIONAL_CHECK_METHODS.includes(method.name)) {
-      flushChecks();
-      result = call(zodMember(context, ZOD_MINI_METHODS[method.name] || method.name), [
-        result,
-        ...method.args,
-      ]);
-    } else if (CHECK_METHODS.includes(method.name)) {
-      const miniName =
-        method.name === "nonempty" ? "minLength" : getCheckMethodName(method.name, baseMethodName);
-      const args =
-        method.name === "nonempty" && method.args.length === 0 ? [numericLiteral(1)] : method.args;
-      checkArgs.push(call(zodMember(context, miniName), args));
-    } else if (OBJECT_MODE_METHODS.includes(method.name)) {
-      flushChecks();
-      result = applyObjectMode(result, method.name, context);
-    } else if (WRAPPER_METHODS.includes(method.name)) {
-      flushChecks();
-      const miniName = ZOD_MINI_METHODS[method.name] || method.name;
-
-      if (method.name === "or") {
-        result = call(zodMember(context, miniName), [arrayExpression([result, ...method.args])]);
-      } else if (method.name === "transform") {
-        result = call(zodMember(context, "pipe"), [
-          result,
-          call(zodMember(context, miniName), method.args),
-        ]);
-      } else if (method.name === "pipe") {
-        result = call(zodMember(context, miniName), [result, ...method.args]);
-      } else if (method.name === "brand") {
-        result = result;
-      } else if (["extend", "omit", "pick"].includes(method.name)) {
-        result = call(zodMember(context, miniName), [
-          result,
-          ...method.args.map((arg) => normalizeExtendArg(arg, context)),
-        ]);
-      } else {
-        result = call(zodMember(context, miniName), [result, ...method.args]);
-      }
-    } else if (method.name === "check") {
-      checkArgs.push(...method.args);
-    } else if (PASSTHROUGH_METHODS.includes(method.name)) {
-      flushChecks();
-      result = call(member(result, method.name), method.args);
-    } else {
+    const handler = ZOD_CHAIN_METHOD_HANDLERS[method.name];
+    if (!handler) {
       throwUnsupportedZodMethod(method.name, context.filename);
     }
+
+    handler(state, method);
   }
 
-  flushChecks();
-  return result;
+  flushPendingChecks(state);
+  return state.result;
 }
 
 function throwUnsupportedZodMethod(methodName: string, filename?: string): never {
@@ -379,42 +521,21 @@ function transformStandaloneWrapper(
   }
 
   context.schemaLocalNames.add(base.value);
-  let result: swc.Expression = base;
+  const state: StandaloneTransformState = {
+    result: base,
+    context,
+  };
 
   for (const method of methods) {
-    if (OBJECT_MODE_METHODS.includes(method.name)) {
-      result = applyStandaloneObjectMode(result, method.name, context);
-    } else if (CHECK_METHODS.includes(method.name)) {
-      result = call(member(result, "check"), [
-        call(zodMember(context, ZOD_MINI_METHODS[method.name] || method.name), method.args),
-      ]);
-    } else if (method.name === "or") {
-      result = call(zodMember(context, "union"), [arrayExpression([result, ...method.args])]);
-    } else if (STANDALONE_WRAPPER_METHODS.includes(method.name)) {
-      const miniName = ZOD_MINI_METHODS[method.name] || method.name;
-
-      if (method.name === "transform") {
-        result = call(zodMember(context, "pipe"), [
-          result,
-          call(zodMember(context, miniName), method.args),
-        ]);
-      } else if (method.name === "brand") {
-        result = result;
-      } else {
-        const args =
-          method.name === "extend"
-            ? method.args.map((arg) => normalizeExtendArg(arg, context))
-            : method.args;
-        result = call(zodMember(context, miniName), [result, ...args]);
-      }
-    } else if (PASSTHROUGH_METHODS.includes(method.name)) {
-      result = call(member(result, method.name), method.args);
-    } else {
+    const handler = STANDALONE_METHOD_HANDLERS[method.name];
+    if (!handler) {
       return undefined;
     }
+
+    handler(state, method);
   }
 
-  return result;
+  return state.result;
 }
 
 function hasUnsupportedStandaloneZodWrapper(
@@ -639,6 +760,14 @@ class ZodMiniSwcVisitor extends Visitor {
     }
 
     if (!methods.some((method) => BASE_METHODS.includes(method.name))) {
+      const unsupported = methods.find(
+        (method) =>
+          !PASSTHROUGH_BASE_METHODS.includes(method.name) && !ZOD_CHAIN_METHOD_HANDLERS[method.name],
+      );
+      if (unsupported) {
+        throwUnsupportedZodMethod(unsupported.name, this.context.filename);
+      }
+
       return node;
     }
 
