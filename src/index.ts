@@ -1,22 +1,21 @@
-import type { UnpluginFactory } from 'unplugin'
+import type { UnpluginBuildContext, UnpluginFactory } from 'unplugin';
+import { createUnplugin } from 'unplugin';
 import { transformZodToMiniWithSourceMap } from './lib/transform';
-import type { Options } from './types'
-import { createUnplugin } from 'unplugin'
+import type { PluginOptions } from './types';
 
-export const unpluginFactory: UnpluginFactory<Options | undefined> = (options) => ({
+export const unpluginFactory: UnpluginFactory<PluginOptions | undefined> = (options) => ({
   name: 'unplugin-zod-to-mini',
-  transform:{
+  transform: {
     filter: {
       id: {
         include: /\.[c|m]?[t|j]sx?$/,
-        exclude: /node_modules/
+        exclude: /node_modules/,
       },
-      code: /import\s+{.*}\s+from\s+['"]zod['"]/
+      code: /import\s+{.*}\s+from\s+['"]zod['"]/,
     },
     handler(code, id) {
-      transformZodToMiniWithSourceMap()
-      return {}
-    }
+      return transformZodToMiniWithSourceMap(code, { ...options, filename: id })
+    },
   },
 })
 

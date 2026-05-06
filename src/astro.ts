@@ -1,8 +1,8 @@
-import type { Options } from './types'
+import type { PluginOptions } from './types'
 
 import unplugin from '.'
 
-export default (options: Options): any => ({
+export default (options: PluginOptions): any => ({
   name: 'unplugin-zod-to-mini',
   hooks: {
     'astro:config:setup': async (astro: any) => {

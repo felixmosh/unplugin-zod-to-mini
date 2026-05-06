@@ -62,9 +62,13 @@ importers:
         version: 4.1.5(@types/node@22.15.21)(vite@6.4.2(@types/node@22.15.21)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.39.2)(tsx@4.21.0)(yaml@2.8.4))
       webpack:
         specifier: ^5.106.2
-        version: 5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))
+        version: 5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4)
 
   playground:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       vite:
         specifier: ^6.4.2
@@ -3085,6 +3089,9 @@ packages:
   zod@3.25.13:
     resolution: {integrity: sha512-Q8mvk2iWi7rTDfpQBsu4ziE7A6AxgzJ5hzRyRYQkoV3A3niYsXVwDaP1Kbz3nWav6S+VZ6k2OznFn8ZyDHvIrg==}
 
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+
 snapshots:
 
   '@babel/generator@8.0.0-rc.3':
@@ -5508,15 +5515,16 @@ snapshots:
 
   term-size@2.2.1: {}
 
-  terser-webpack-plugin@5.5.0(@swc/core@1.15.33(@swc/helpers@0.5.17))(webpack@5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))):
+  terser-webpack-plugin@5.5.0(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4)(webpack@5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.25
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       terser: 5.39.2
-      webpack: 5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))
+      webpack: 5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4)
     optionalDependencies:
       '@swc/core': 1.15.33(@swc/helpers@0.5.17)
+      esbuild: 0.25.4
 
   terser@5.39.2:
     dependencies:
@@ -5782,7 +5790,7 @@ snapshots:
 
   webpack-virtual-modules@0.6.2: {}
 
-  webpack@5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17)):
+  webpack@5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -5805,7 +5813,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.3
-      terser-webpack-plugin: 5.5.0(@swc/core@1.15.33(@swc/helpers@0.5.17))(webpack@5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17)))
+      terser-webpack-plugin: 5.5.0(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4)(webpack@5.106.2(@swc/core@1.15.33(@swc/helpers@0.5.17))(esbuild@0.25.4))
       watchpack: 2.5.1
       webpack-sources: 3.4.1
     transitivePeerDependencies:
@@ -5833,3 +5841,5 @@ snapshots:
       zod: 3.25.13
 
   zod@3.25.13: {}
+
+  zod@4.4.3: {}

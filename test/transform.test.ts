@@ -261,6 +261,26 @@ export const dynamicPolicyEditRequest = dynamicPolicyAddRequest.extend({
     );
   });
 
+  it('transforms loose and strict on object schema variables', () => {
+    const input = `export const UserSchema = z.object({
+  name: z.string().min(2).max(50),
+  email: EmailSchema,
+  age: z.number().min(0).max(150).optional(),
+  role: z.enum(["admin", "user", "guest"]).default("guest"),
+});
+
+export const AdminSchema = UserSchema.extend({
+  role: z.literal("admin"),
+}).loose();
+
+export const LockedUserSchema = UserSchema.strict();`;
+    const output = transformZodSnippet(input);
+    expectCode(output).toContain(
+      `export const AdminSchema = z.looseObject(z.extend(UserSchema, { role: z.literal("admin") }).shape);`
+    );
+    expectCode(output).toContain(`export const LockedUserSchema = z.strictObject(UserSchema.shape);`);
+  });
+
   it('transforms and chains on schema variables', () => {
     const input = `const messageSchema = baseMessageSchema.and(
   z.union([

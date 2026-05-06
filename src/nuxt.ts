@@ -1,9 +1,9 @@
-import type { Options } from './types'
+import type { PluginOptions } from './types'
 import { addVitePlugin, addWebpackPlugin, defineNuxtModule } from '@nuxt/kit'
 import vite from './vite'
 import webpack from './webpack'
 
-export interface ModuleOptions extends Options {
+export interface ModuleOptions extends PluginOptions {
 
 }
 
