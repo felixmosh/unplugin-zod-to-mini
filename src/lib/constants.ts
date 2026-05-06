@@ -235,7 +235,7 @@ export const STANDALONE_WRAPPER_METHODS = [
 
 export const FUNCTIONAL_CHECK_METHODS = ['email', 'url', 'ipv4', 'ipv6'];
 export const PASSTHROUGH_METHODS = ['parse', 'check', 'apply'];
-export const OBJECT_MODE_METHODS = ['loose', 'strict'];
+export const OBJECT_MODE_METHODS = ['loose', 'strict', 'strip'];
 
 export const ZOD_SCHEMA_CONTEXT_METHODS = [
   'object',

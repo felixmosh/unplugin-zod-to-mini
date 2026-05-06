@@ -11,14 +11,14 @@ export const unpluginFactory: UnpluginFactory<PluginOptions | undefined> = (opti
         include: /\.[c|m]?[t|j]sx?$/,
         exclude: /node_modules/,
       },
-      code: /import\s+{.*}\s+from\s+['"]zod['"]/,
+      code: /from\s+['"]zod['"]/,
     },
     handler(code, id) {
-      return transformZodToMiniWithSourceMap(code, { ...options, filename: id })
+      return transformZodToMiniWithSourceMap(code, { ...options, filename: id });
     },
   },
-})
+});
 
-export const unplugin = /* #__PURE__ */ createUnplugin(unpluginFactory)
+export const unplugin = /* #__PURE__ */ createUnplugin(unpluginFactory);
 
-export default unplugin
+export default unplugin;

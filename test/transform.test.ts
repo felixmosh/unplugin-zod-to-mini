@@ -273,12 +273,14 @@ export const AdminSchema = UserSchema.extend({
   role: z.literal("admin"),
 }).loose();
 
-export const LockedUserSchema = UserSchema.strict();`;
+export const LockedUserSchema = UserSchema.strict();
+export const LockedAdminSchema = AdminSchema.strip();`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
       `export const AdminSchema = z.looseObject(z.extend(UserSchema, { role: z.literal("admin") }).shape);`
     );
     expectCode(output).toContain(`export const LockedUserSchema = z.strictObject(UserSchema.shape);`);
+    expectCode(output).toContain(`export const LockedAdminSchema = z.stripObject(AdminSchema.shape);`);
   });
 
   it('transforms and chains on schema variables', () => {

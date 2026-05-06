@@ -290,7 +290,6 @@ function applyObjectMode(
   mode: string,
   context: TransformContext,
 ): swc.Expression {
-  const miniName = mode === "loose" ? "looseObject" : "strictObject";
   if (
     !isCallExpression(result) ||
     !isMemberExpression(result.callee) ||
@@ -299,6 +298,8 @@ function applyObjectMode(
   ) {
     return result;
   }
+
+  const miniName = getObjectModeMiniName(mode);
 
   if (result.callee.property.value === "object") {
     result.callee = zodMember(context, miniName);
@@ -326,9 +327,13 @@ function applyStandaloneObjectMode(
     return objectMode;
   }
 
-  return call(zodMember(context, mode === "loose" ? "looseObject" : "strictObject"), [
+  return call(zodMember(context, getObjectModeMiniName(mode)), [
     member(result, "shape"),
   ]);
+}
+
+function getObjectModeMiniName(mode: string): string {
+  return `${mode}Object`;
 }
 
 function normalizeExtendArg(arg: swc.Expression, context: TransformContext): swc.Expression {
