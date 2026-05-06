@@ -1,13 +1,17 @@
 {
   "name": "unplugin-zod-to-mini",
   "version": "0.1.0",
-  "description": "",
+  "description": "Transform Zod schemas to Zod/mini at build time",
   "keywords": [
-    "rollup",
+    "code-generation",
+    "rspack",
+    "schema",
     "transform",
     "unplugin",
     "vite",
-    "webpack"
+    "webpack",
+    "zod",
+    "zod to zod/mini"
   ],
   "homepage": "https://github.com/felixmosh/unplugin-zod-to-mini#readme",
   "bugs": {
@@ -22,28 +26,90 @@
     "dist"
   ],
   "type": "module",
-  "main": "./dist/index.mjs",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/*",
-        "./*"
-      ]
-    }
-  },
   "exports": {
-    ".": "./dist/index.mjs",
-    "./astro": "./dist/astro.mjs",
-    "./esbuild": "./dist/esbuild.mjs",
-    "./farm": "./dist/farm.mjs",
-    "./nuxt": "./dist/nuxt.mjs",
-    "./rollup": "./dist/rollup.mjs",
-    "./rspack": "./dist/rspack.mjs",
-    "./types": "./dist/types.mjs",
-    "./vite": "./dist/vite.mjs",
-    "./webpack": "./dist/webpack.mjs",
+    ".": {
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./astro": {
+      "types": {
+        "import": "./dist/astro.d.mts",
+        "require": "./dist/astro.d.cts"
+      },
+      "import": "./dist/astro.mjs",
+      "require": "./dist/astro.cjs"
+    },
+    "./esbuild": {
+      "types": {
+        "import": "./dist/esbuild.d.mts",
+        "require": "./dist/esbuild.d.cts"
+      },
+      "import": "./dist/esbuild.mjs",
+      "require": "./dist/esbuild.cjs"
+    },
+    "./farm": {
+      "types": {
+        "import": "./dist/farm.d.mts",
+        "require": "./dist/farm.d.cts"
+      },
+      "import": "./dist/farm.mjs",
+      "require": "./dist/farm.cjs"
+    },
+    "./nuxt": {
+      "types": {
+        "import": "./dist/nuxt.d.mts",
+        "require": "./dist/nuxt.d.cts"
+      },
+      "import": "./dist/nuxt.mjs",
+      "require": "./dist/nuxt.cjs"
+    },
+    "./rollup": {
+      "types": {
+        "import": "./dist/rollup.d.mts",
+        "require": "./dist/rollup.d.cts"
+      },
+      "import": "./dist/rollup.mjs",
+      "require": "./dist/rollup.cjs"
+    },
+    "./rspack": {
+      "types": {
+        "import": "./dist/rspack.d.mts",
+        "require": "./dist/rspack.d.cts"
+      },
+      "import": "./dist/rspack.mjs",
+      "require": "./dist/rspack.cjs"
+    },
+    "./types": {
+      "types": {
+        "import": "./dist/types.d.mts",
+        "require": "./dist/types.d.cts"
+      },
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.cjs"
+    },
+    "./vite": {
+      "types": {
+        "import": "./dist/vite.d.mts",
+        "require": "./dist/vite.d.cts"
+      },
+      "import": "./dist/vite.mjs",
+      "require": "./dist/vite.cjs"
+    },
+    "./webpack": {
+      "types": {
+        "import": "./dist/webpack.d.mts",
+        "require": "./dist/webpack.d.cts"
+      },
+      "import": "./dist/webpack.mjs",
+      "require": "./dist/webpack.cjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -110,6 +176,9 @@
     "webpack": {
       "optional": true
     }
+  },
+  "engines": {
+    "node": ">=22"
   },
   "packageManager": "pnpm@10.11.0"
 }

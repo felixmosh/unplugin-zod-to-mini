@@ -1,10 +1,13 @@
-import type { UnpluginBuildContext, UnpluginFactory } from 'unplugin';
+import type { UnpluginFactory } from 'unplugin';
 import { createUnplugin } from 'unplugin';
 import { transformZodToMiniWithSourceMap } from './lib/transform';
 import type { PluginOptions } from './types';
 
-export const unpluginFactory: UnpluginFactory<PluginOptions | undefined> = (options) => ({
-  name: 'unplugin-zod-to-mini',
+export const unpluginFactory: UnpluginFactory<PluginOptions | undefined> = ({
+  sourceMaps = true,
+  jsx,
+} = {}) => ({
+  name: "unplugin-zod-to-mini",
   transform: {
     filter: {
       id: {
@@ -14,7 +17,7 @@ export const unpluginFactory: UnpluginFactory<PluginOptions | undefined> = (opti
       code: /from\s+['"]zod['"]/,
     },
     handler(code, id) {
-      return transformZodToMiniWithSourceMap(code, { ...options, filename: id });
+      return transformZodToMiniWithSourceMap(code, { sourceMaps, jsx, filename: id });
     },
   },
 });

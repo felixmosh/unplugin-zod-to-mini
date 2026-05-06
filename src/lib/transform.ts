@@ -651,18 +651,6 @@ function isSchemaExpression(expression: swc.Expression, context: TransformContex
   return false;
 }
 
-function parseMap(map: string | undefined): unknown {
-  if (!map) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(map);
-  } catch {
-    return map;
-  }
-}
-
 class ZodMiniSwcVisitor extends Visitor {
   private functionDepth = 0;
   private schemaContextDepth = 0;
