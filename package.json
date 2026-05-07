@@ -119,7 +119,6 @@
     "lint": "oxlint .",
     "play": "npm -C playground run dev",
     "prebuild": "npm run generate:zod-metadata",
-    "prepublishOnly": "npm run build",
     "release": "bumpp",
     "start": "tsx src/index.ts",
     "pretest": "npm run generate:zod-metadata",
