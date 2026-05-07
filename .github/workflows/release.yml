@@ -3,13 +3,14 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -19,6 +20,9 @@ jobs:
         with:
           node-version: lts/*
 
-      - run: npx changelogithub
+      - name: Release
+        run: |
+          npx changelogithub
+          npm publish
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
