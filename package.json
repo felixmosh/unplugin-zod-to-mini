@@ -1,6 +1,6 @@
 {
   "name": "unplugin-zod-to-mini",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Transform Zod schemas to Zod/mini at build time",
   "keywords": [
     "code-generation",
