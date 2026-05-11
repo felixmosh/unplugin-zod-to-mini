@@ -1,7 +1,8 @@
 # unplugin-zod-to-mini
 
-[![NPM version](https://img.shields.io/npm/v/unplugin-zod-to-mini?color=a1b858&label=)](https://www.npmjs.com/package/unplugin-zod-to-mini)
- ![stability](https://img.shields.io/badge/stability-experimental-black)
+[![NPM version](https://img.shields.io/npm/v/unplugin-zod-to-mini?label=npm)](https://www.npmjs.com/package/unplugin-zod-to-mini)
+[![Tests](https://github.com/felixmosh/unplugin-zod-to-mini/actions/workflows/ci.yml/badge.svg)](https://www.npmjs.com/package/unplugin-zod-to-mini)
+![stability](https://img.shields.io/badge/stability-experimental-black)
 
 A build-time transformer that converts Zod schemas to use [zod/mini](https://zod.dev/packages/mini) — a tree-shakable variant of Zod.
 
