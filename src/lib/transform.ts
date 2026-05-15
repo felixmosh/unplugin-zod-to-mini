@@ -2,14 +2,14 @@ import type * as swc from '@swc/core';
 import { parseSync, printSync } from '@swc/core';
 import { Visitor } from '@swc/core/Visitor';
 import { PluginOptions } from '../types';
-import { isSupportedChainCheckMethod, SUPPORTED_CHAIN_CHECK_METHODS } from './checks';
 import { type ChainMethod, getCheckMethodName, getZodChain } from './chain';
+import { isSupportedChainCheckMethod, SUPPORTED_CHAIN_CHECK_METHODS } from './checks';
 import {
   BASE_METHODS,
   FUNCTIONAL_CHECK_METHODS,
   OBJECT_MODE_METHODS,
-  PASSTHROUGH_METHODS,
   PASSTHROUGH_BASE_METHODS,
+  PASSTHROUGH_METHODS,
   STANDALONE_WRAPPER_METHODS,
   WRAPPER_METHODS,
   ZOD_MINI_METHODS,
@@ -39,7 +39,7 @@ interface TransformContext extends TransformOptions {
 
 function id(value: string): swc.Identifier {
   return {
-    type: "Identifier",
+    type: 'Identifier',
     span: DUMMY_SPAN,
     ctxt: 0,
     value,
@@ -49,7 +49,7 @@ function id(value: string): swc.Identifier {
 
 function stringLiteral(value: string): swc.StringLiteral {
   return {
-    type: "StringLiteral",
+    type: 'StringLiteral',
     span: DUMMY_SPAN,
     value,
     raw: JSON.stringify(value),
@@ -58,7 +58,7 @@ function stringLiteral(value: string): swc.StringLiteral {
 
 function numericLiteral(value: number): swc.NumericLiteral {
   return {
-    type: "NumericLiteral",
+    type: 'NumericLiteral',
     span: DUMMY_SPAN,
     value,
     raw: String(value),
@@ -74,7 +74,7 @@ function exprArg(expression: swc.Expression): swc.Argument {
 
 function member(object: swc.Expression, property: string): swc.MemberExpression {
   return {
-    type: "MemberExpression",
+    type: 'MemberExpression',
     span: DUMMY_SPAN,
     object,
     property: id(property),
@@ -83,7 +83,7 @@ function member(object: swc.Expression, property: string): swc.MemberExpression 
 
 function call(callee: swc.Expression, args: swc.Expression[] = []): swc.CallExpression {
   return {
-    type: "CallExpression",
+    type: 'CallExpression',
     span: DUMMY_SPAN,
     ctxt: 0,
     callee,
@@ -94,7 +94,7 @@ function call(callee: swc.Expression, args: swc.Expression[] = []): swc.CallExpr
 
 function arrayExpression(elements: swc.Expression[]): swc.ArrayExpression {
   return {
-    type: "ArrayExpression",
+    type: 'ArrayExpression',
     span: DUMMY_SPAN,
     elements: elements.map(exprArg),
   };
@@ -111,7 +111,7 @@ function zodMember(context: TransformContext, name: string): swc.MemberExpressio
 function isIdentifier(node: unknown, value?: string): node is swc.Identifier {
   return (
     Boolean(
-      node && typeof node === "object" && (node as { type?: string }).type === "Identifier",
+      node && typeof node === 'object' && (node as { type?: string }).type === 'Identifier',
     ) &&
     (value === undefined || (node as swc.Identifier).value === value)
   );
@@ -119,34 +119,34 @@ function isIdentifier(node: unknown, value?: string): node is swc.Identifier {
 
 function isCallExpression(node: unknown): node is swc.CallExpression {
   return Boolean(
-    node && typeof node === "object" && (node as { type?: string }).type === "CallExpression",
+    node && typeof node === 'object' && (node as { type?: string }).type === 'CallExpression',
   );
 }
 
 function isMemberExpression(node: unknown): node is swc.MemberExpression {
   return Boolean(
-    node && typeof node === "object" && (node as { type?: string }).type === "MemberExpression",
+    node && typeof node === 'object' && (node as { type?: string }).type === 'MemberExpression',
   );
 }
 
 function isZodSpecifier(
   specifier: swc.ImportSpecifier | swc.ImportDefaultSpecifier | swc.ImportNamespaceSpecifier,
 ): boolean {
-  if (specifier.type === "ImportSpecifier") {
+  if (specifier.type === 'ImportSpecifier') {
     return (
-      (!specifier.imported || isIdentifier(specifier.imported, "z")) &&
+      (!specifier.imported || isIdentifier(specifier.imported, 'z')) &&
       isIdentifier(specifier.local)
     );
   }
 
   return (
-    specifier.type === "ImportDefaultSpecifier" || specifier.type === "ImportNamespaceSpecifier"
+    specifier.type === 'ImportDefaultSpecifier' || specifier.type === 'ImportNamespaceSpecifier'
   );
 }
 
 function getZodBinding(ast: swc.Module): ZodBinding | undefined {
   for (const node of ast.body) {
-    if (node.type !== "ImportDeclaration" || node.source.value !== "zod") {
+    if (node.type !== 'ImportDeclaration' || node.source.value !== 'zod') {
       continue;
     }
 
@@ -165,17 +165,17 @@ function getZodBinding(ast: swc.Module): ZodBinding | undefined {
 }
 
 function rewriteZodImportToMini(importDeclaration: swc.ImportDeclaration): void {
-  importDeclaration.source = stringLiteral("zod/mini");
+  importDeclaration.source = stringLiteral('zod/mini');
   importDeclaration.specifiers = importDeclaration.specifiers.map((specifier) => {
-    if (specifier.type !== "ImportDefaultSpecifier") {
+    if (specifier.type !== 'ImportDefaultSpecifier') {
       return specifier;
     }
 
     return {
-      type: "ImportSpecifier",
+      type: 'ImportSpecifier',
       span: DUMMY_SPAN,
       local: id(specifier.local.value),
-      imported: specifier.local.value === "z" ? undefined : id("z"),
+      imported: specifier.local.value === 'z' ? undefined : id('z'),
       isTypeOnly: false,
     };
   });
@@ -207,17 +207,28 @@ interface ChainTransformState {
 type ChainMethodHandler = (state: ChainTransformState, method: ChainMethod) => void;
 type StandaloneMethodHandler = (state: StandaloneTransformState, method: ChainMethod) => void;
 
+function applyTransform(
+  state: { result: swc.Expression },
+  method: ChainMethod,
+  context: TransformContext,
+): void {
+  state.result = call(zodMember(context, 'pipe'), [
+    state.result,
+    call(zodMember(context, getMiniMethodName(method.name)), method.args),
+  ]);
+}
+
+function getMiniMethodName(methodName: string): string {
+  return ZOD_MINI_METHODS[methodName] || methodName;
+}
+
 function flushPendingChecks(state: ChainTransformState): void {
   if (state.checkArgs.length === 0) {
     return;
   }
 
-  state.result = call(member(state.result, "check"), state.checkArgs);
+  state.result = call(member(state.result, 'check'), state.checkArgs);
   state.checkArgs.length = 0;
-}
-
-function getMiniMethodName(methodName: string): string {
-  return ZOD_MINI_METHODS[methodName] || methodName;
 }
 
 function createZodChainMethodHandlers(): Record<string, ChainMethodHandler> {
@@ -240,11 +251,11 @@ function createZodChainMethodHandlers(): Record<string, ChainMethodHandler> {
 
     handlers[methodName] = (state, method) => {
       const miniName =
-        method.name === "nonempty"
-          ? "minLength"
+        method.name === 'nonempty'
+          ? 'minLength'
           : getCheckMethodName(method.name, state.baseMethodName);
       const args =
-        method.name === "nonempty" && method.args.length === 0 ? [numericLiteral(1)] : method.args;
+        method.name === 'nonempty' && method.args.length === 0 ? [numericLiteral(1)] : method.args;
       state.checkArgs.push(call(zodMember(state.context, miniName), args));
     };
   }
@@ -261,31 +272,28 @@ function createZodChainMethodHandlers(): Record<string, ChainMethodHandler> {
       flushPendingChecks(state);
       const miniName = getMiniMethodName(method.name);
 
-      if (method.name === "or") {
+      if (method.name === 'or') {
         state.result = call(zodMember(state.context, miniName), [
           arrayExpression([state.result, ...method.args]),
         ]);
         return;
       }
 
-      if (method.name === "transform") {
-        state.result = call(zodMember(state.context, "pipe"), [
-          state.result,
-          call(zodMember(state.context, miniName), method.args),
-        ]);
+      if (method.name === 'transform') {
+        applyTransform(state, method, state.context);
         return;
       }
 
-      if (method.name === "pipe") {
+      if (method.name === 'pipe') {
         state.result = call(zodMember(state.context, miniName), [state.result, ...method.args]);
         return;
       }
 
-      if (method.name === "brand") {
+      if (method.name === 'brand') {
         return;
       }
 
-      if (["extend", "omit", "pick"].includes(method.name)) {
+      if (['extend', 'omit', 'pick'].includes(method.name)) {
         state.result = call(zodMember(state.context, miniName), [
           state.result,
           ...method.args.map((arg) => normalizeExtendArg(arg, state.context)),
@@ -302,7 +310,7 @@ function createZodChainMethodHandlers(): Record<string, ChainMethodHandler> {
   };
 
   for (const methodName of PASSTHROUGH_METHODS) {
-    if (methodName === "check") {
+    if (methodName === 'check') {
       continue;
     }
 
@@ -333,14 +341,14 @@ function createStandaloneMethodHandlers(): Record<string, StandaloneMethodHandle
 
   for (const methodName of SUPPORTED_CHAIN_CHECK_METHODS) {
     handlers[methodName] = (state, method) => {
-      state.result = call(member(state.result, "check"), [
+      state.result = call(member(state.result, 'check'), [
         call(zodMember(state.context, getMiniMethodName(method.name)), method.args),
       ]);
     };
   }
 
   handlers.or = (state, method) => {
-    state.result = call(zodMember(state.context, "union"), [
+    state.result = call(zodMember(state.context, 'union'), [
       arrayExpression([state.result, ...method.args]),
     ]);
   };
@@ -353,20 +361,17 @@ function createStandaloneMethodHandlers(): Record<string, StandaloneMethodHandle
     handlers[methodName] = (state, method) => {
       const miniName = getMiniMethodName(method.name);
 
-      if (method.name === "transform") {
-        state.result = call(zodMember(state.context, "pipe"), [
-          state.result,
-          call(zodMember(state.context, miniName), method.args),
-        ]);
+      if (method.name === 'transform') {
+        applyTransform(state, method, state.context);
         return;
       }
 
-      if (method.name === "brand") {
+      if (method.name === 'brand') {
         return;
       }
 
       const args =
-        method.name === "extend"
+        method.name === 'extend'
           ? method.args.map((arg) => normalizeExtendArg(arg, state.context))
           : method.args;
       state.result = call(zodMember(state.context, miniName), [state.result, ...args]);
@@ -423,8 +428,11 @@ function transformZodChain(
 }
 
 function throwUnsupportedZodMethod(methodName: string, filename?: string): never {
-  const suffix = filename ? ` while processing ${filename}` : "";
-  throw new Error(`Unsupported Zod method "${methodName}" in zod-mini-transform${suffix}`);
+  throw new Error(
+    `Unsupported Zod method "${methodName}" in zod-mini-transform${
+      filename ? ` while processing ${filename}` : ''
+    }`,
+  );
 }
 
 function applyObjectMode(
@@ -443,17 +451,17 @@ function applyObjectMode(
 
   const miniName = getObjectModeMiniName(mode);
 
-  if (result.callee.property.value === "object") {
+  if (result.callee.property.value === 'object') {
     result.callee = zodMember(context, miniName);
     return result;
   }
 
   if (
-    ["extend", "pick", "omit", "partial", "required", "strictObject", "looseObject"].includes(
+    ['extend', 'pick', 'omit', 'partial', 'required', 'strictObject', 'looseObject'].includes(
       result.callee.property.value,
     )
   ) {
-    return call(zodMember(context, miniName), [member(result, "shape")]);
+    return call(zodMember(context, miniName), [member(result, 'shape')]);
   }
 
   return result;
@@ -469,9 +477,7 @@ function applyStandaloneObjectMode(
     return objectMode;
   }
 
-  return call(zodMember(context, getObjectModeMiniName(mode)), [
-    member(result, "shape"),
-  ]);
+  return call(zodMember(context, getObjectModeMiniName(mode)), [member(result, 'shape')]);
 }
 
 function getObjectModeMiniName(mode: string): string {
@@ -483,7 +489,7 @@ function normalizeExtendArg(arg: swc.Expression, context: TransformContext): swc
     isCallExpression(arg) &&
     isMemberExpression(arg.callee) &&
     isIdentifier(arg.callee.object, context.zodLocalName) &&
-    isIdentifier(arg.callee.property, "object") &&
+    isIdentifier(arg.callee.property, 'object') &&
     arg.arguments[0]?.expression
   ) {
     return arg.arguments[0].expression;
@@ -492,11 +498,11 @@ function normalizeExtendArg(arg: swc.Expression, context: TransformContext): swc
   return arg;
 }
 
-function transformStandaloneWrapper(
+function getStandaloneChain(
   expression: swc.Expression,
   context: TransformContext,
   allowUnmarkedSchemaBase = false,
-): swc.Expression | undefined {
+): { base: swc.Identifier; methods: ChainMethod[] } | undefined {
   if (!isCallExpression(expression) || !isMemberExpression(expression.callee)) {
     return undefined;
   }
@@ -509,6 +515,19 @@ function transformStandaloneWrapper(
   ) {
     return undefined;
   }
+
+  return { base, methods };
+}
+
+function transformStandaloneWrapper(
+  expression: swc.Expression,
+  context: TransformContext,
+  allowUnmarkedSchemaBase = false,
+): swc.Expression | undefined {
+  const chain = getStandaloneChain(expression, context, allowUnmarkedSchemaBase);
+  if (!chain) return undefined;
+
+  const { base, methods } = chain;
 
   if (
     !methods.some(
@@ -543,24 +562,14 @@ function hasUnsupportedStandaloneZodWrapper(
   context: TransformContext,
   allowUnmarkedSchemaBase = false,
 ): boolean {
-  if (!isCallExpression(expression) || !isMemberExpression(expression.callee)) {
-    return false;
-  }
+  const chain = getStandaloneChain(expression, context, allowUnmarkedSchemaBase);
+  if (!chain) return false;
 
-  const { base, methods } = getZodChain(expression);
-  if (
-    !isIdentifier(base) ||
-    base.value === context.zodLocalName ||
-    (!allowUnmarkedSchemaBase && !isKnownOrLikelySchemaIdentifier(base.value, context))
-  ) {
-    return false;
-  }
-
-  if (!methods.some((method) => isSupportedStandaloneMethod(method.name))) {
-    return false;
-  }
-
-  return methods.some((method) => !isSupportedStandaloneMethod(method.name));
+  const { methods } = chain;
+  return (
+    methods.some((method) => isSupportedStandaloneMethod(method.name)) &&
+    methods.some((method) => !isSupportedStandaloneMethod(method.name))
+  );
 }
 
 function isSupportedStandaloneMethod(methodName: string): boolean {
@@ -621,9 +630,9 @@ function markSchemaDeclaration(
 
 function isSchemaExpression(expression: swc.Expression, context: TransformContext): boolean {
   if (
-    expression.type === "TsAsExpression" ||
-    expression.type === "TsSatisfiesExpression" ||
-    expression.type === "TsTypeAssertion"
+    expression.type === 'TsAsExpression' ||
+    expression.type === 'TsSatisfiesExpression' ||
+    expression.type === 'TsTypeAssertion'
   ) {
     return isSchemaExpression(expression.expression, context);
   }
@@ -632,21 +641,17 @@ function isSchemaExpression(expression: swc.Expression, context: TransformContex
     return context.schemaLocalNames.has(expression.value);
   }
 
-  if (isCallExpression(expression)) {
-    if (isMemberExpression(expression.callee)) {
-      if (isIdentifier(expression.callee.object, context.zodLocalName)) {
-        return true;
-      }
+  if (!isCallExpression(expression)) return false;
 
-      if (isIdentifier(expression.callee.property, "check")) {
-        return isSchemaExpression(expression.callee.object, context);
-      }
-    }
+  if (isMemberExpression(expression.callee)) {
+    if (isIdentifier(expression.callee.object, context.zodLocalName)) return true;
 
-    if (isIdentifier(expression.callee, context.zodLocalName)) {
-      return true;
+    if (isIdentifier(expression.callee.property, 'check')) {
+      return isSchemaExpression(expression.callee.object, context);
     }
   }
+
+  if (isIdentifier(expression.callee, context.zodLocalName)) return true;
 
   return false;
 }
@@ -660,17 +665,11 @@ class ZodMiniSwcVisitor extends Visitor {
   }
 
   visitFunction<T extends swc.Fn>(node: T): T {
-    this.functionDepth++;
-    const result = super.visitFunction(node);
-    this.functionDepth--;
-    return result;
+    return this.withFunctionDepth(() => super.visitFunction(node));
   }
 
   visitArrowFunctionExpression(node: swc.ArrowFunctionExpression): swc.Expression {
-    this.functionDepth++;
-    const result = super.visitArrowFunctionExpression(node);
-    this.functionDepth--;
-    return result;
+    return this.withFunctionDepth(() => super.visitArrowFunctionExpression(node));
   }
 
   visitTsType<T extends swc.TsType>(node: T): T {
@@ -720,6 +719,13 @@ class ZodMiniSwcVisitor extends Visitor {
     return this.transformVisitedCall(visited);
   }
 
+  private withFunctionDepth<T>(visit: () => T): T {
+    this.functionDepth++;
+    const result = visit();
+    this.functionDepth--;
+    return result;
+  }
+
   private transformVisitedCall(node: swc.CallExpression): swc.Expression {
     const insideFunction = this.functionDepth > 0;
     const insideSchemaContext = !insideFunction && this.schemaContextDepth > 0;
@@ -735,7 +741,7 @@ class ZodMiniSwcVisitor extends Visitor {
     ) {
       const { methods } = getZodChain(node);
       const unsupported = methods.find((method) => !isSupportedStandaloneMethod(method.name));
-      throwUnsupportedZodMethod(unsupported?.name ?? "unknown", this.context.filename);
+      throwUnsupportedZodMethod(unsupported?.name ?? 'unknown', this.context.filename);
     }
 
     if (!isMemberExpression(node.callee)) {
@@ -750,7 +756,8 @@ class ZodMiniSwcVisitor extends Visitor {
     if (!methods.some((method) => BASE_METHODS.includes(method.name))) {
       const unsupported = methods.find(
         (method) =>
-          !PASSTHROUGH_BASE_METHODS.includes(method.name) && !ZOD_CHAIN_METHOD_HANDLERS[method.name],
+          !PASSTHROUGH_BASE_METHODS.includes(method.name) &&
+          !ZOD_CHAIN_METHOD_HANDLERS[method.name],
       );
       if (unsupported) {
         throwUnsupportedZodMethod(unsupported.name, this.context.filename);
@@ -768,7 +775,7 @@ export function transformZodToMiniWithSourceMap(
   options: TransformOptions = {},
 ): TransformResult | undefined {
   const ast = parseSync(code, {
-    syntax: "typescript",
+    syntax: 'typescript',
     tsx: options.jsx || false,
   });
 

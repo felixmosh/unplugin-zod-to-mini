@@ -4,7 +4,13 @@ export const MINI_DYNAMIC_CHECK_METHODS = new Set<string>(GENERATED_MINI_CHECK_M
 
 export const MINI_CHECK_ALIASES = new Set(['min', 'max', 'step', 'nonempty']);
 export const MINI_CUSTOM_CHECK_METHODS = new Set(['refine', 'superRefine', 'meta', 'describe']);
-export const MINI_EXTRA_CHAIN_CHECK_METHODS = new Set(['uuid', 'int', 'date', 'iso', 'discriminatedUnion']);
+export const MINI_EXTRA_CHAIN_CHECK_METHODS = new Set([
+  'uuid',
+  'int',
+  'date',
+  'iso',
+  'discriminatedUnion',
+]);
 
 export const SUPPORTED_CHAIN_CHECK_METHODS = new Set<string>([
   ...MINI_DYNAMIC_CHECK_METHODS,

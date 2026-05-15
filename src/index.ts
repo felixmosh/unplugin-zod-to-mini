@@ -7,7 +7,7 @@ export const unpluginFactory: UnpluginFactory<PluginOptions | undefined> = ({
   sourceMaps = true,
   jsx,
 } = {}) => ({
-  name: "unplugin-zod-to-mini",
+  name: 'unplugin-zod-to-mini',
   transform: {
     filter: {
       id: {

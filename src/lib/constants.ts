@@ -155,17 +155,19 @@ const NON_WRAPPER_SCHEMA_METHODS = new Set([
   'with',
 ]);
 
-const DERIVED_SCHEMA_METHODS = [...new Set([...GENERATED_ZOD_TYPE_METHODS, ...GENERATED_ZOD_OBJECT_METHODS])];
+const ALL_GENERATED_SCHEMA_METHODS = [
+  ...GENERATED_ZOD_TYPE_METHODS,
+  ...GENERATED_ZOD_OBJECT_METHODS,
+];
 const DERIVED_OBJECT_MODE_METHODS = ['loose', 'strict'].filter((methodName) =>
   GENERATED_ZOD_OBJECT_METHODS.includes(methodName as any),
 );
-const DERIVED_WRAPPER_METHODS = DERIVED_SCHEMA_METHODS.filter((methodName) => {
-  return (
+const DERIVED_WRAPPER_METHODS = ALL_GENERATED_SCHEMA_METHODS.filter(
+  (methodName) =>
     !SUPPORTED_CHAIN_CHECK_METHODS.has(methodName) &&
     !NON_WRAPPER_SCHEMA_METHODS.has(methodName) &&
-    !DERIVED_OBJECT_MODE_METHODS.includes(methodName)
-  );
-});
+    !DERIVED_OBJECT_MODE_METHODS.includes(methodName),
+);
 
 export const WRAPPER_METHODS = DERIVED_WRAPPER_METHODS;
 export const STANDALONE_WRAPPER_METHODS = DERIVED_WRAPPER_METHODS;

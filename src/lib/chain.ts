@@ -4,23 +4,36 @@ import { ZOD_MINI_METHODS } from './constants';
 export type ChainMethod = { name: string; args: swc.Expression[] };
 
 function isIdentifier(node: unknown): node is swc.Identifier {
-  return Boolean(node && typeof node === 'object' && (node as { type?: string }).type === 'Identifier');
+  return Boolean(
+    node && typeof node === 'object' && (node as { type?: string }).type === 'Identifier',
+  );
 }
 
 function isCallExpression(node: unknown): node is swc.CallExpression {
-  return Boolean(node && typeof node === 'object' && (node as { type?: string }).type === 'CallExpression');
+  return Boolean(
+    node && typeof node === 'object' && (node as { type?: string }).type === 'CallExpression',
+  );
 }
 
 function isMemberExpression(node: unknown): node is swc.MemberExpression {
-  return Boolean(node && typeof node === 'object' && (node as { type?: string }).type === 'MemberExpression');
+  return Boolean(
+    node && typeof node === 'object' && (node as { type?: string }).type === 'MemberExpression',
+  );
 }
 
-export function getZodChain(expression: swc.Expression): { base: swc.Expression; methods: ChainMethod[] } {
+export function getZodChain(expression: swc.Expression): {
+  base: swc.Expression;
+  methods: ChainMethod[];
+} {
   const methods: ChainMethod[] = [];
   let current = expression;
 
   while (true) {
-    if (isCallExpression(current) && isMemberExpression(current.callee) && isIdentifier(current.callee.property)) {
+    if (
+      isCallExpression(current) &&
+      isMemberExpression(current.callee) &&
+      isIdentifier(current.callee.property)
+    ) {
       methods.unshift({
         name: current.callee.property.value,
         args: current.arguments.map((argument) => argument.expression),

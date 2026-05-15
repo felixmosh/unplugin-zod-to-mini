@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { transformZodToMini } from '../src/lib/transform';
 import { expectCode } from './codeExpect';
 
-const transformZodSnippet = (code: string) => transformZodToMini(`import { z } from 'zod';\n${code}`);
+const transformZodSnippet = (code: string) =>
+  transformZodToMini(`import { z } from 'zod';\n${code}`);
 
 describe('transformZodToMini', () => {
   it('does not transform z-shaped chains without a zod import', () => {
@@ -79,9 +80,11 @@ describe('transformZodToMini', () => {
 const strictFileSchema = z.object({ type: z.literal('file') }).strict();`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `const fileSchema = z.looseObject({ type: z.literal('file'), filename: z.string().check(z.endsWith('.svg')), mimetype: z.literal('image/svg+xml') });`
+      `const fileSchema = z.looseObject({ type: z.literal('file'), filename: z.string().check(z.endsWith('.svg')), mimetype: z.literal('image/svg+xml') });`,
     );
-    expectCode(output).toContain(`const strictFileSchema = z.strictObject({ type: z.literal('file') });`);
+    expectCode(output).toContain(
+      `const strictFileSchema = z.strictObject({ type: z.literal('file') });`,
+    );
   });
 
   it('transforms number with int and min/max', () => {
@@ -94,7 +97,7 @@ const strictFileSchema = z.object({ type: z.literal('file') }).strict();`;
     const input = `z.object({ id: z.string().uuid(), age: z.number().min(18).optional() })`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.object({ id: z.string().check(z.uuid()), age: z.optional(z.number().check(z.gte(18))) })`
+      `z.object({ id: z.string().check(z.uuid()), age: z.optional(z.number().check(z.gte(18))) })`,
     );
   });
 
@@ -102,7 +105,7 @@ const strictFileSchema = z.object({ type: z.literal('file') }).strict();`;
     const input = `z.string().min(5).max(10).refine(val => val.includes("@")).trim()`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.string().check(z.minLength(5), z.maxLength(10), z.refine(val => val.includes("@")), z.trim());`
+      `z.string().check(z.minLength(5), z.maxLength(10), z.refine(val => val.includes("@")), z.trim());`,
     );
   });
 
@@ -116,7 +119,7 @@ const strictFileSchema = z.object({ type: z.literal('file') }).strict();`;
     const input = `z.string().trim().transform(val => val.toUpperCase()).optional().nullable()`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.nullable(z.optional(z.pipe(z.string().check(z.trim()), z.transform(val => val.toUpperCase()))))`
+      `z.nullable(z.optional(z.pipe(z.string().check(z.trim()), z.transform(val => val.toUpperCase()))))`,
     );
   });
 
@@ -124,21 +127,23 @@ const strictFileSchema = z.object({ type: z.literal('file') }).strict();`;
     const input = `z.string().email().min(5).refine(val => val.endsWith(".com")).toLowerCase()`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.email(z.string()).check(z.minLength(5), z.refine(val => val.endsWith(".com")), z.toLowerCase())`
+      `z.email(z.string()).check(z.minLength(5), z.refine(val => val.endsWith(".com")), z.toLowerCase())`,
     );
   });
 
   it('handles coerce, checks, wrappers, and parse chaining', () => {
     const input = `z.coerce.number<number>().int().positive().optional().parse("42")`;
     const output = transformZodSnippet(input);
-    expectCode(output).toContain(`z.optional(z.coerce.number().check(z.int(), z.positive())).parse("42")`);
+    expectCode(output).toContain(
+      `z.optional(z.coerce.number().check(z.int(), z.positive())).parse("42")`,
+    );
   });
 
   it('handles nested array and object chains', () => {
     const input = `z.array(z.object({ id: z.string().uuid().optional() })).min(1).nullable()`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.nullable(z.array(z.object({ id: z.optional(z.string().check(z.uuid())) })).check(z.minLength(1)))`
+      `z.nullable(z.array(z.object({ id: z.optional(z.string().check(z.uuid())) })).check(z.minLength(1)))`,
     );
   });
 
@@ -170,7 +175,9 @@ const strictFileSchema = z.object({ type: z.literal('file') }).strict();`;
     const input = `const portSchema = z.coerce.number().int().gte(3000).positive();
 const env = z.object({ port: portSchema.default(4000) });`;
     const output = transformZodSnippet(input);
-    expectCode(output).toContain(`const portSchema = z.coerce.number().check(z.int(), z.gte(3000), z.positive());`);
+    expectCode(output).toContain(
+      `const portSchema = z.coerce.number().check(z.int(), z.gte(3000), z.positive());`,
+    );
     expectCode(output).toContain(`const env = z.object({ port: z._default(portSchema, 4000) });`);
   });
 
@@ -206,7 +213,9 @@ const accommodationInsights = z.object({
   vacationDate: dateOrString.transform((date) => getISODate(date)),
 });`;
     const output = transformZodSnippet(input);
-    expectCode(output).toContain(`vacationDate: z.pipe(dateOrString, z.transform(date => getISODate(date)))`);
+    expectCode(output).toContain(
+      `vacationDate: z.pipe(dateOrString, z.transform(date => getISODate(date)))`,
+    );
   });
 
   it('transforms or chains and extend on schema variables', () => {
@@ -254,10 +263,10 @@ export const dynamicPolicyEditRequest = dynamicPolicyAddRequest.extend({
 });`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `iconFile: z.optional(z.looseObject({ type: z.literal('file'), filename: z.string().check(z.endsWith('.svg')), mimetype: z.literal('image/svg+xml') }))`
+      `iconFile: z.optional(z.looseObject({ type: z.literal('file'), filename: z.string().check(z.endsWith('.svg')), mimetype: z.literal('image/svg+xml') }))`,
     );
     expectCode(output).toContain(
-      `export const dynamicPolicyEditRequest = z.extend(dynamicPolicyAddRequest, { id: z.object({ type: z.literal('field'), mimetype: z.literal('text/plain'), value: idValue }) });`
+      `export const dynamicPolicyEditRequest = z.extend(dynamicPolicyAddRequest, { id: z.object({ type: z.literal('field'), mimetype: z.literal('text/plain'), value: idValue }) });`,
     );
   });
 
@@ -276,9 +285,11 @@ export const AdminSchema = UserSchema.extend({
 export const LockedUserSchema = UserSchema.strict();`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `export const AdminSchema = z.looseObject(z.extend(UserSchema, { role: z.literal("admin") }).shape);`
+      `export const AdminSchema = z.looseObject(z.extend(UserSchema, { role: z.literal("admin") }).shape);`,
     );
-    expectCode(output).toContain(`export const LockedUserSchema = z.strictObject(UserSchema.shape);`);
+    expectCode(output).toContain(
+      `export const LockedUserSchema = z.strictObject(UserSchema.shape);`,
+    );
   });
 
   it('transforms and chains on schema variables', () => {
@@ -294,7 +305,7 @@ export const LockedUserSchema = UserSchema.strict();`;
 );`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `const messageSchema = z.intersection(baseMessageSchema, z.union([textMessageTypeSchema, buttonMessageTypeSchema, imageMessageTypeSchema, videoMessageTypeSchema, documentMessageTypeSchema, unknownMessageTypeSchema]));`
+      `const messageSchema = z.intersection(baseMessageSchema, z.union([textMessageTypeSchema, buttonMessageTypeSchema, imageMessageTypeSchema, videoMessageTypeSchema, documentMessageTypeSchema, unknownMessageTypeSchema]));`,
     );
   });
 
@@ -344,7 +355,7 @@ id: z.string(),
     const output = transformZodSnippet(input);
 
     expectCode(output).toContain(
-      `business: z.object({ id: z.union([idValue, z.literal(0)]), ...z.partial(businessSchema).shape })`
+      `business: z.object({ id: z.union([idValue, z.literal(0)]), ...z.partial(businessSchema).shape })`,
     );
   });
 
@@ -365,10 +376,10 @@ const priceQuotesSchema = z.object({
     const output = transformZodSnippet(input);
 
     expectCode(output).toContain(
-      `vatId: z.string().check(z.refine(value => isValidIsraeliID(value), { message: 'VAT.ID' }))`
+      `vatId: z.string().check(z.refine(value => isValidIsraeliID(value), { message: 'VAT.ID' }))`,
     );
     expectCode(output).toContain(
-      `business: z.object({ id: z.union([idValue, z.literal(0)]), ...z.partial(businessSchema).shape })`
+      `business: z.object({ id: z.union([idValue, z.literal(0)]), ...z.partial(businessSchema).shape })`,
     );
   });
 
@@ -404,15 +415,17 @@ const priceQuotesSchema = z.object({
 
     expectCode(output).toContain(`z.optional(z.pipe(z.partial(z.object({`);
     expectCode(output).toContain(
-      `z.pipe(z.partial(z.object({ checkin: z.iso.date().check(z.refine(date => isAfter(date, startOfDay(new Date())), { error: 'ERROR.CHECKIN_DATE.MIN_TODAY' })), checkout: z.iso.date().check(z.refine(date => isAfter(date, startOfDay(new Date())), { error: 'ERROR.CHECKOUT_DATE.MIN_TODAY' })), adults: z.number().check(z.int(), z.gte(0), z.lte(100)), children: z.number().check(z.int(), z.gte(0), z.lte(100)), infants: z.number().check(z.int(), z.gte(0), z.lte(100)), bedrooms: z.number().check(z.int(), z.gte(0), z.lte(100)) })).check(z.refine(value => !(!!value.checkin && !value.checkout), { error: 'PROMOTED_CATEGORIES.ERROR.CHECKOUT_REQUIRED' }), z.refine(value => !(!value.checkin && !!value.checkout), { error: 'PROMOTED_CATEGORIES.ERROR.CHECKIN_REQUIRED' })), z.transform(value => Object.fromEntries(Object.entries(value || {}).filter(([key, value]) => {`
+      `z.pipe(z.partial(z.object({ checkin: z.iso.date().check(z.refine(date => isAfter(date, startOfDay(new Date())), { error: 'ERROR.CHECKIN_DATE.MIN_TODAY' })), checkout: z.iso.date().check(z.refine(date => isAfter(date, startOfDay(new Date())), { error: 'ERROR.CHECKOUT_DATE.MIN_TODAY' })), adults: z.number().check(z.int(), z.gte(0), z.lte(100)), children: z.number().check(z.int(), z.gte(0), z.lte(100)), infants: z.number().check(z.int(), z.gte(0), z.lte(100)), bedrooms: z.number().check(z.int(), z.gte(0), z.lte(100)) })).check(z.refine(value => !(!!value.checkin && !value.checkout), { error: 'PROMOTED_CATEGORIES.ERROR.CHECKOUT_REQUIRED' }), z.refine(value => !(!value.checkin && !!value.checkout), { error: 'PROMOTED_CATEGORIES.ERROR.CHECKIN_REQUIRED' })), z.transform(value => Object.fromEntries(Object.entries(value || {}).filter(([key, value]) => {`,
     );
-    expectCode(output).notToContain(`}).check(z.refine(value => !(!!value.checkin && !value.checkout)`);
+    expectCode(output).notToContain(
+      `}).check(z.refine(value => !(!!value.checkin && !value.checkout)`,
+    );
 
     const simpleOutput = transformZodSnippet(
-      `const schema = z.object({ a: z.string() }).partial().refine((value) => value.a).optional();`
+      `const schema = z.object({ a: z.string() }).partial().refine((value) => value.a).optional();`,
     );
     expectCode(simpleOutput).toContain(
-      `z.optional(z.partial(z.object({ a: z.string() })).check(z.refine(value => value.a)))`
+      `z.optional(z.partial(z.object({ a: z.string() })).check(z.refine(value => value.a)))`,
     );
     expectCode(simpleOutput).notToContain(`z.optional(z.partial(z.object({ a: z.string() }).check`);
   });
@@ -427,9 +440,11 @@ const priceQuotesSchema = z.object({
 const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `const imageWithoutDescription = z.nullable(z.omit(baseImageSchema, { description: true }).check(z.refine(value => value?.fileName.startsWith(\`\${env.CLD_FOLDER}/system-messages/\`), { error: 'ERROR.IMAGE_FILENAME.STARTS_WITH' })));`
+      `const imageWithoutDescription = z.nullable(z.omit(baseImageSchema, { description: true }).check(z.refine(value => value?.fileName.startsWith(\`\${env.CLD_FOLDER}/system-messages/\`), { error: 'ERROR.IMAGE_FILENAME.STARTS_WITH' })));`,
     );
-    expectCode(output).toContain(`const imageIdentity = z.pick(baseImageSchema, { fileName: true });`);
+    expectCode(output).toContain(
+      `const imageIdentity = z.pick(baseImageSchema, { fileName: true });`,
+    );
   });
 
   it('transforms default after optional checked coerce chains', () => {
@@ -438,7 +453,7 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
 });`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `const paginationQuerySchema = z.object({ page: z._default(z.optional(z.coerce.number().check(z.gte(1))), 1) });`
+      `const paginationQuerySchema = z.object({ page: z._default(z.optional(z.coerce.number().check(z.gte(1))), 1) });`,
     );
   });
 
@@ -452,7 +467,7 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     const input = `const schema = z.string().default("x").transform((value) => value.trim());`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `const schema = z.pipe(z._default(z.string(), "x"), z.transform(value => value.trim()));`
+      `const schema = z.pipe(z._default(z.string(), "x"), z.transform(value => value.trim()));`,
     );
     expectCode(output).notToContain(`._default(z.string(), "x").pipe`);
   });
@@ -483,13 +498,15 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
   .catch({ checkin: undefined, checkout: undefined });`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `checkin: z.optional(z.pipe(z.iso.date(), z.transform(date => new Date(date))).check(z.refine(value => isAfter(value, startOfDay(new Date())), { error: 'ERROR.CHECKIN.MIN_DATE' })))`
+      `checkin: z.optional(z.pipe(z.iso.date(), z.transform(date => new Date(date))).check(z.refine(value => isAfter(value, startOfDay(new Date())), { error: 'ERROR.CHECKIN.MIN_DATE' })))`,
     );
-    expectCode(output).toContain(`checkout: z.optional(z.pipe(z.iso.date(), z.transform(date => new Date(date))))`);
+    expectCode(output).toContain(
+      `checkout: z.optional(z.pipe(z.iso.date(), z.transform(date => new Date(date))))`,
+    );
     expectCode(output).toContain(`z.catch(z.object({`);
     expectCode(output).toContain(`}).check(z.refine(({ checkin, checkout }) => {`);
     expectCode(output).toContain(
-      `{ error: 'ERROR.CHECKOUT.MIN_DATE' })), { checkin: undefined, checkout: undefined })`
+      `{ error: 'ERROR.CHECKOUT.MIN_DATE' })), { checkin: undefined, checkout: undefined })`,
     );
   });
 
@@ -497,7 +514,7 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     const input = `z.number().gt(0).gte(1).lt(10).lte(9).multipleOf(3).nonnegative()`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.number().check(z.gt(0), z.gte(1), z.lt(10), z.lte(9), z.multipleOf(3), z.nonnegative())`
+      `z.number().check(z.gt(0), z.gte(1), z.lt(10), z.lte(9), z.multipleOf(3), z.nonnegative())`,
     );
   });
 
@@ -512,14 +529,16 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
   it('transforms collection size checks', () => {
     const input = `z.array(z.string()).minSize(1).maxSize(5).size(3)`;
     const output = transformZodSnippet(input);
-    expectCode(output).toContain(`z.array(z.string()).check(z.minSize(1), z.maxSize(5), z.size(3))`);
+    expectCode(output).toContain(
+      `z.array(z.string()).check(z.minSize(1), z.maxSize(5), z.size(3))`,
+    );
   });
 
   it('transforms string checks and mutations from mini docs', () => {
     const input = `z.string().regex(/^[a-z]+$/).lowercase().includes("a").startsWith("a").endsWith("z").normalize().toUpperCase()`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.string().check(z.regex(/^[a-z]+$/), z.lowercase(), z.includes("a"), z.startsWith("a"), z.endsWith("z"), z.normalize(), z.toUpperCase())`
+      `z.string().check(z.regex(/^[a-z]+$/), z.lowercase(), z.includes("a"), z.startsWith("a"), z.endsWith("z"), z.normalize(), z.toUpperCase())`,
     );
   });
 
@@ -527,7 +546,7 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     const input = `z.string().superRefine((val, ctx) => {}).overwrite(val => val.trim()).meta({ title: "Name" }).describe("A name")`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `z.string().check(z.superRefine((val, ctx) => {}), z.overwrite(val => val.trim()), z.meta({ title: "Name" }), z.describe("A name"))`
+      `z.string().check(z.superRefine((val, ctx) => {}), z.overwrite(val => val.trim()), z.meta({ title: "Name" }), z.describe("A name"))`,
     );
   });
 
@@ -552,7 +571,9 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
   });`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(`}).check(z.superRefine((val, ctx) => {`);
-    expectCode(output).toContain(`ctx.addIssue({ code: 'custom', message: 'CHAT.INVALID_CONTENT' });`);
+    expectCode(output).toContain(
+      `ctx.addIssue({ code: 'custom', message: 'CHAT.INVALID_CONTENT' });`,
+    );
     expectCode(output).notToContain(`z.check((val, ctx) =>`);
   });
 
@@ -571,7 +592,9 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
   it('transforms prefault after transforms', () => {
     const input = `z.string().transform(val => val.length).prefault("tuna")`;
     const output = transformZodSnippet(input);
-    expectCode(output).toContain(`z.prefault(z.pipe(z.string(), z.transform(val => val.length)), "tuna")`);
+    expectCode(output).toContain(
+      `z.prefault(z.pipe(z.string(), z.transform(val => val.length)), "tuna")`,
+    );
   });
 
   it('keeps clone passthrough on string schemas', () => {
@@ -582,13 +605,13 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
 
   it('throws on unsupported zod chain methods', () => {
     expect(() => transformZodSnippet(`z.string().madeUpZodMethod()`)).toThrow(
-      `Unsupported Zod method "madeUpZodMethod" in zod-mini-transform`
+      `Unsupported Zod method "madeUpZodMethod" in zod-mini-transform`,
     );
   });
 
   it('throws on strip object mode since mini uses strip by default', () => {
     expect(() => transformZodSnippet(`z.object({ id: z.number() }).strip()`)).toThrow(
-      `Unsupported Zod method "strip" in zod-mini-transform`
+      `Unsupported Zod method "strip" in zod-mini-transform`,
     );
   });
 
@@ -596,14 +619,16 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     expect(() =>
       transformZodToMini(`import { z } from 'zod';\nz.string().madeUpZodMethod()`, {
         filename: '/app/src/schema.ts',
-      })
-    ).toThrow(`Unsupported Zod method "madeUpZodMethod" in zod-mini-transform while processing /app/src/schema.ts`);
+      }),
+    ).toThrow(
+      `Unsupported Zod method "madeUpZodMethod" in zod-mini-transform while processing /app/src/schema.ts`,
+    );
   });
 
   it('throws on unsupported methods in schema variable wrapper chains', () => {
-    expect(() => transformZodSnippet(`const schema = baseSchema.madeUpZodMethod().optional();`)).toThrow(
-      `Unsupported Zod method "madeUpZodMethod" in zod-mini-transform`
-    );
+    expect(() =>
+      transformZodSnippet(`const schema = baseSchema.madeUpZodMethod().optional();`),
+    ).toThrow(`Unsupported Zod method "madeUpZodMethod" in zod-mini-transform`);
   });
 
   it('does not throw on unrelated method calls', () => {
@@ -651,7 +676,7 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
   .transform((value) => ({ ...value, isIncluded: +value.isIncluded }))`;
     const output = transformZodSnippet(input);
     expectCode(output).toContain(
-      `const mealSchema = z.pipe(z.discriminatedUnion('isIncluded', [z.object({ isIncluded: z.literal('INCLUDED_IN_PRICE') }), z.object({ isIncluded: z.literal('NOT_INCLUDED_IN_PRICE'), adultPrice: z.coerce.number(), childPrice: z.coerce.number() }), z.object({ isIncluded: z.literal('NOT_INCLUDED_IN_PRICE_PRICES_UNKNOWN') })]), z.transform(value => ({ ...value, isIncluded: +value.isIncluded })));`
+      `const mealSchema = z.pipe(z.discriminatedUnion('isIncluded', [z.object({ isIncluded: z.literal('INCLUDED_IN_PRICE') }), z.object({ isIncluded: z.literal('NOT_INCLUDED_IN_PRICE'), adultPrice: z.coerce.number(), childPrice: z.coerce.number() }), z.object({ isIncluded: z.literal('NOT_INCLUDED_IN_PRICE_PRICES_UNKNOWN') })]), z.transform(value => ({ ...value, isIncluded: +value.isIncluded })));`,
     );
   });
 
@@ -669,7 +694,22 @@ const imageIdentity = baseImageSchema.pick({ fileName: true });`;
     });`);
     expectCode(output).toContain(`categoryIds: z.array(idValue).check(z.minLength(1))`);
     expectCode(output).toContain(
-      `image: z.nullable(baseImageSchema.check(z.refine(value => value.fileName.includes('/promoted-categories/'), { error: 'ERROR.IMAGE_FILENAME_NOT_VALID' })))`
+      `image: z.nullable(baseImageSchema.check(z.refine(value => value.fileName.includes('/promoted-categories/'), { error: 'ERROR.IMAGE_FILENAME_NOT_VALID' })))`,
     );
+  });
+
+  it('transforms when z is imported with an alias', () => {
+    const input = `import { z as zod } from 'zod';\nconst schema = zod.string().min(5).optional();`;
+    const output = transformZodToMini(input);
+    expectCode(output).toContain(`import { z as zod } from "zod/mini";`);
+    expectCode(output).toContain(
+      `const schema = zod.optional(zod.string().check(zod.minLength(5)));`,
+    );
+  });
+
+  it('passes through lazy and transforms inner chains', () => {
+    const input = `z.lazy(() => z.string().min(5))`;
+    const output = transformZodSnippet(input);
+    expectCode(output).toContain(`z.lazy(() => z.string().check(z.minLength(5)))`);
   });
 });
